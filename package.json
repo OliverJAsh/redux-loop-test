@@ -1,0 +1,18 @@
+{
+  "name": "redux-loop-test",
+  "private": true,
+  "scripts": {
+    "compileTypescript": "mkdir -p ./target-typescript && tsc",
+    "compileBrowserify": "mkdir -p ./target && browserify ./target-typescript/main.js --outfile ./target/main.js",
+    "copyHtml": "cp ./src/index.html ./target/index.html",
+    "compile": "npm run compileTypescript && npm run compileBrowserify && npm run copyHtml"
+  },
+  "dependencies": {
+    "@types/immutable": "^3.8.3",
+    "browserify": "^13.1.0",
+    "immutable": "^3.8.1",
+    "redux": "^3.6.0",
+    "redux-loop": "^2.2.2",
+    "typescript": "^2.1.0-dev.20160905"
+  }
+}
