@@ -1,12 +1,13 @@
 import { createStore } from 'redux';
-import { install, loop, Effects } from 'redux-loop';
-import { fromJS } from 'immutable';
+import { install, loop, Effects, Effect, EnhancedReducer } from 'redux-loop';
 
-const firstAction = {
-    type: 'FIRST_ACTION',
-};
+enum ActionTypes { First, Second, Third };
+type FirstAction = { type: ActionTypes.First };
+type SecondAction = { type: ActionTypes.Second, payload: string }
+type ThirdAction = { type: ActionTypes.Third };
+type Action = FirstAction | SecondAction | ThirdAction;
 
-const doSecondAction = (value: any) => {
+const doSecondAction = (value: string): Promise<SecondAction> => {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({
@@ -17,50 +18,52 @@ const doSecondAction = (value: any) => {
     });
 }
 
-const thirdAction = {
-    type: 'THIRD_ACTION',
+type State = {
+    firstRun: boolean
+    secondRun: boolean
+    thirdRun: boolean
 };
 
-// immutable store state allowed by default, but not required
-const initialState = fromJS({
+const initialState: State = {
     firstRun: false,
     secondRun: false,
     thirdRun: false,
-});
+};
 
-type ReducerFn = (state: any, action: any) => any;
-const reducer: ReducerFn = (state, action) => {
+const patch = <O, P>(o: O, p: P): O & P => Object.assign({}, o, p);
+
+const reducer: EnhancedReducer<State> = (state: State, action: Action): State | [State, Effect] => {
     switch(action.type) {
 
-    case 'FIRST_ACTION':
+    case ActionTypes.First:
         // Enter a sequence at FIRST_ACTION, SECOND_ACTION and THIRD_ACTION will be
         // dispatched in the order they are passed to batch
         return loop(
-            state.set('firstRun', true),
+            patch(state, { firstRun: true }),
             Effects.batch([
                 Effects.promise(doSecondAction, 'hello'),
-                Effects.constant(thirdAction)
+                Effects.constant({ type: ActionTypes.Third })
             ])
         );
 
-    case 'SECOND_ACTION':
-        return state.set('secondRun', action.payload);
+    case ActionTypes.Second:
+        return patch(state, { secondRun: action.payload })
 
-    case 'THIRD_ACTION':
-        return state.set('thirdRun', true);
-
-    default:
-        return state;
+    case ActionTypes.Third:
+        return patch(state, { thirdRun: true })
     }
 }
 
+// We have to use the enhancer directly, passing Redux in, to take
+// advantage of our typings.
 // Note: passing enhancer as the last argument to createStore requires redux@>=3.1.0
-const store = createStore(reducer, initialState, install());
+// const store = createStore(reducer, initialState, install());
+const store = install()(createStore)(reducer, initialState);
 
-(<any>store
-    .dispatch(firstAction))
+store
+    .dispatch({ type: ActionTypes.First })
     .then(() => {
         // dispatch returns a promise for when the current sequence is complete
         // { firstRun: true, secondRun: 'hello', thirdRun: true }
-        console.log(store.getState().toJS());
+        console.log(store.getState());
     });

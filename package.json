@@ -8,9 +8,7 @@
     "compile": "npm run compileTypescript && npm run compileBrowserify && npm run copyHtml"
   },
   "dependencies": {
-    "@types/immutable": "^3.8.3",
     "browserify": "^13.1.0",
-    "immutable": "^3.8.1",
     "redux": "^3.6.0",
     "redux-loop": "^2.2.2",
     "typescript": "^2.1.0-dev.20160905"
